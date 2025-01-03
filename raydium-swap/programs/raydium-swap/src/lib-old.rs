@@ -1,11 +1,15 @@
 use anchor_lang::prelude::*;
-use anchor_spl::associated_token::AssociatedToken;
 use anchor_spl::token::Token;
 use anchor_spl::token_interface::{Mint, Token2022, TokenAccount};
 
 declare_id!("6WnLw2a5dNsoV7ZFAf2VrWrc2GBNwpYEhtRySSwTZdRL");
 
 pub const REWARD_NUM: usize = 3;
+
+pub mod raydium {
+    use anchor_lang::prelude::*;
+    declare_id!("devi51mZmdwUJGU9hjN27vEz64Gps7uUefqxg27EAtH");
+}
 
 #[account]
 #[derive(Default, Debug)]
@@ -210,27 +214,15 @@ pub struct Swap<'info> {
 
     /// CHECK: TODO
     pub amm_config: UncheckedAccount<'info>,
-
+    // pub amm_config: Box<Account<'info, AmmConfig>>,
     /// CHECK: TODO
     #[account(mut)]
     pub pool_state: UncheckedAccount<'info>,
-
-    #[account(
-        mut
-        // init_if_needed,
-        // payer = payer,
-        // associated_token::mint = input_vault_mint,
-        // associated_token::authority = payer
-    )]
+    // pub pool_state: AccountLoader<'info, PoolState>,
+    #[account(mut)]
     pub input_token_account: Box<InterfaceAccount<'info, TokenAccount>>,
 
-    #[account(
-        mut
-        // init_if_needed,
-        // payer = payer,
-        // associated_token::mint = output_vault_mint,
-        // associated_token::authority = payer
-    )]
+    #[account(mut)]
     pub output_token_account: Box<InterfaceAccount<'info, TokenAccount>>,
 
     #[account(mut)]
@@ -242,7 +234,7 @@ pub struct Swap<'info> {
     /// CHECK: TODO
     #[account(mut)]
     pub observation_state: UncheckedAccount<'info>,
-
+    // pub observation_state: AccountLoader<'info, ObservationState>,
     pub token_program: Program<'info, Token>,
 
     pub token_program_2022: Program<'info, Token2022>,
@@ -255,12 +247,8 @@ pub struct Swap<'info> {
 
     pub output_vault_mint: Box<InterfaceAccount<'info, Mint>>,
 
-    pub system_program: Program<'info, System>,
-
     /// CHECK: TODO
     pub raydium_program: AccountInfo<'info>,
-
-    pub associated_token_program: Program<'info, AssociatedToken>,
 }
 
 #[program]
@@ -276,32 +264,6 @@ pub mod raydium_swap {
         ctx: Context<'a, 'b, 'c, 'info, Swap<'info>>,
         params: SwapParams,
     ) -> Result<()> {
-        let cpi_program = ctx.accounts.associated_token_program.to_account_info();
-
-        let cpi_accounts_input = anchor_spl::associated_token::Create {
-            payer: ctx.accounts.payer.to_account_info(),
-            associated_token: ctx.accounts.input_token_account.to_account_info(),
-            authority: ctx.accounts.payer.to_account_info(),
-            mint: ctx.accounts.input_vault_mint.to_account_info(),
-            system_program: ctx.accounts.system_program.to_account_info(),
-            token_program: ctx.accounts.token_program.to_account_info(),
-        };
-        let cpi_ctx_input =
-            anchor_lang::context::CpiContext::new(cpi_program.clone(), cpi_accounts_input);
-        anchor_spl::associated_token::create(cpi_ctx_input)?;
-
-        let cpi_accounts_output = anchor_spl::associated_token::Create {
-            payer: ctx.accounts.payer.to_account_info(),
-            associated_token: ctx.accounts.output_token_account.to_account_info(),
-            authority: ctx.accounts.payer.to_account_info(),
-            mint: ctx.accounts.output_vault_mint.to_account_info(),
-            system_program: ctx.accounts.system_program.to_account_info(),
-            token_program: ctx.accounts.token_program.to_account_info(),
-        };
-        let cpi_ctx_output =
-            anchor_lang::context::CpiContext::new(cpi_program.clone(), cpi_accounts_output);
-        anchor_spl::associated_token::create(cpi_ctx_output)?;
-
         let accounts = vec![
             AccountMeta::new_readonly(ctx.accounts.payer.key(), true),
             AccountMeta::new_readonly(ctx.accounts.amm_config.key(), false),
@@ -327,13 +289,47 @@ pub mod raydium_swap {
             is_base_input: params.is_base_input,
         };
 
+        msg!("SwapParams:");
+        msg!("  amount: {}", params.amount);
+        msg!(
+            "  other_amount_threshold: {}",
+            params.other_amount_threshold
+        );
+        msg!("  sqrt_price_limit_x64: {}", params.sqrt_price_limit_x64);
+        msg!("  is_base_input: {}", params.is_base_input);
+
         let discriminator =
             anchor_lang::solana_program::hash::hash("global:swap_v2".as_bytes()).to_bytes();
+
+        msg!("Discriminator (Decimal): {:?}", &discriminator[..8]);
+        msg!(
+            "Discriminator (Hex): {:?}",
+            &discriminator[..8]
+                .iter()
+                .map(|byte| format!("{:02x}", byte))
+                .collect::<Vec<_>>()
+        );
 
         let mut instruction_data = Vec::new();
         instruction_data.extend_from_slice(&discriminator[..8]);
 
+        msg!(
+            "Instruction Data After extend: {:?}",
+            instruction_data
+                .iter()
+                .map(|b| format!("{:02x}", b))
+                .collect::<Vec<_>>()
+        );
+
         swap_data.serialize(&mut instruction_data)?;
+
+        msg!(
+            "Instruction Data After Serialization: {:?}",
+            instruction_data
+                .iter()
+                .map(|b| format!("{:02x}", b))
+                .collect::<Vec<_>>()
+        );
 
         let mut accounts_with_remaining = accounts;
         accounts_with_remaining.extend(

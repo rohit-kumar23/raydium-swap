@@ -1,27 +1,29 @@
 import * as anchor from "@coral-xyz/anchor";
 import { Program } from "@coral-xyz/anchor";
 import { RaydiumSwap } from "../target/types/raydium_swap";
+import { ASSOCIATED_TOKEN_PROGRAM_ID, } from "@solana/spl-token";
+import { SYSTEM_PROGRAM_ID } from "@coral-xyz/anchor/dist/cjs/native/system";
 
 describe("raydium-swap", () => {
   // const raydiumProgramId = new anchor.web3.PublicKey("devi51mZmdwUJGU9hjN27vEz64Gps7uUefqxg27EAtH");
 
   const ammConfig = new anchor.web3.PublicKey("CQYbhr6amxUER4p5SC44C63R4qw4NFc9Z4Db9vF4tZwG");
-  const poolState = new anchor.web3.PublicKey("89ReBZ4AU4j1H51hCUvvmkxQNMKLyDkKifqxYcaqqmss");
+  const poolState = new anchor.web3.PublicKey("HRn16fqH3gR8xXgxgRxHY4M2unraFYTapgz8JLJRAvck");
 
   const inputTokenAccount = new anchor.web3.PublicKey("Dssy4EoKmZVpjMbiyBsxkdXXHzSpNhGJq1QzyRa3idSa");
-  const outputTokenAccount = new anchor.web3.PublicKey("2BYDFzVpXx24ajfXBiSdUY6QQmmuwHUP1GKNBSX7kjE2");
+  const outputTokenAccount = new anchor.web3.PublicKey("BKnyS61zDzdK3fBRx63tHsj8jUBodAeFatdaMrzAVqZS");
 
-  const poolInputVault = new anchor.web3.PublicKey("E34pSEkzBLfuakPpewhEGv63dzMeQ1ZTzSkLsefPAk6T");
-  const poolOutputVault = new anchor.web3.PublicKey("96zRBbFmeVW1Drbu183jLXPUTCwjDuun9occg3VuRaRo");
+  const poolInputVault = new anchor.web3.PublicKey("sohUc9fNVXwRhpoA1m4TYTmkn3hGwBB53Yw6kRL62h3");
+  const poolOutputVault = new anchor.web3.PublicKey("H2xBLMD5DZ8Sgk1xfNv6MuHVA1Nvur8UY5EZ3TZt278V");
 
-  const observationState = new anchor.web3.PublicKey("Di7B23MeqnjUfuD2DMRKLtX4o1gad88B7r4CRvhgHGib");
+  const observationState = new anchor.web3.PublicKey("1iDWLzyRDTnvaAxW7tT8rJYViG1ktx9CS4AvgeJ8pdb");
 
   const tokenProgram = new anchor.web3.PublicKey("TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA");
   const tokenProgram2022 = new anchor.web3.PublicKey("TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb");
   const memoProgram = new anchor.web3.PublicKey("MemoSq4gqABAXKb96qnH8TysNcWxMyWCqXgDLGmfcHr");
 
   const inputVaultMint = new anchor.web3.PublicKey("So11111111111111111111111111111111111111112");
-  const outputVaultMint = new anchor.web3.PublicKey("AdwzK2QgpPHeTV5iN8udm6Q1jYAL4tFkZifV4MkkPSPr");
+  const outputVaultMint = new anchor.web3.PublicKey("686P1DCV27RYVkiq5rgh74nQqWfV5W6itB2gBJtqNPHy");
 
   const raydiumProgram = new anchor.web3.PublicKey("devi51mZmdwUJGU9hjN27vEz64Gps7uUefqxg27EAtH");
 
@@ -55,7 +57,7 @@ describe("raydium-swap", () => {
     const program = anchor.workspace.RaydiumSwap as Program<RaydiumSwap>;
 
     const params = {
-      amount: new anchor.BN(1000000000),
+      amount: new anchor.BN(10000),
       otherAmountThreshold: new anchor.BN(500),
       sqrtPriceLimitX64: new anchor.BN("0"),
       isBaseInput: true,
@@ -83,7 +85,9 @@ describe("raydium-swap", () => {
         memoProgram: memoProgram,
         inputVaultMint: inputVaultMint,
         outputVaultMint: outputVaultMint,
+        systemProgram: SYSTEM_PROGRAM_ID,
         raydiumProgram: raydiumProgram,
+        associatedTokenProgram: ASSOCIATED_TOKEN_PROGRAM_ID,
       })
       .remainingAccounts(remainingAccounts.map(account => {
         return { pubkey: account, isSigner: false, isWritable: true };
