@@ -233,14 +233,6 @@ pub struct Swap<'info> {
     )]
     pub output_token_account: Box<InterfaceAccount<'info, TokenAccount>>,
 
-    // /// CHECK: TODO
-    // #[account(mut)]
-    // pub input_token_account: UncheckedAccount<'info>,
-
-    // /// CHECK: TODO
-    // #[account(mut)]
-    // pub output_token_account: UncheckedAccount<'info>,
-
     #[account(mut)]
     pub input_vault: Box<InterfaceAccount<'info, TokenAccount>>,
 
@@ -283,37 +275,6 @@ pub mod raydium_swap {
         ctx: Context<'a, 'b, 'c, 'info, Swap<'info>>,
         params: SwapParams,
     ) -> Result<()> {
-        // let cpi_program = ctx.accounts.associated_token_program.to_account_info();
-
-        // if ctx.accounts.input_token_account.owner == &anchor_lang::solana_program::system_program::ID {
-        //     msg!("Input token account initializing...");
-        //     let cpi_accounts_input = anchor_spl::associated_token::Create {
-        //         payer: ctx.accounts.payer.to_account_info(),
-        //         associated_token: ctx.accounts.input_token_account.to_account_info(),
-        //         authority: ctx.accounts.payer.to_account_info(),
-        //         mint: ctx.accounts.input_vault_mint.to_account_info(),
-        //         system_program: ctx.accounts.system_program.to_account_info(),
-        //         token_program: ctx.accounts.token_program.to_account_info(),
-        //     };
-        //     let cpi_ctx_input =
-        //         anchor_lang::context::CpiContext::new(cpi_program.clone(), cpi_accounts_input);
-        //     anchor_spl::associated_token::create(cpi_ctx_input)?;
-        // }
-
-        // if ctx.accounts.output_token_account.owner == &anchor_lang::solana_program::system_program::ID {
-        //     msg!("Input token account initializing...");
-        //     let cpi_accounts_output = anchor_spl::associated_token::Create {
-        //         payer: ctx.accounts.payer.to_account_info(),
-        //         associated_token: ctx.accounts.output_token_account.to_account_info(),
-        //         authority: ctx.accounts.payer.to_account_info(),
-        //         mint: ctx.accounts.output_vault_mint.to_account_info(),
-        //         system_program: ctx.accounts.system_program.to_account_info(),
-        //         token_program: ctx.accounts.token_program.to_account_info(),
-        //     };
-        //     let cpi_ctx_output =
-        //         anchor_lang::context::CpiContext::new(cpi_program.clone(), cpi_accounts_output);
-        //     anchor_spl::associated_token::create(cpi_ctx_output)?;
-        // }
 
         let accounts = vec![
             AccountMeta::new_readonly(ctx.accounts.payer.key(), true),

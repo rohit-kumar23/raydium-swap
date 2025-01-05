@@ -11,7 +11,7 @@ describe("raydium-swap", () => {
   const poolState = new anchor.web3.PublicKey("HRn16fqH3gR8xXgxgRxHY4M2unraFYTapgz8JLJRAvck");
 
   const inputTokenAccount = new anchor.web3.PublicKey("Dssy4EoKmZVpjMbiyBsxkdXXHzSpNhGJq1QzyRa3idSa");
-  const outputTokenAccount = new anchor.web3.PublicKey("BKnyS61zDzdK3fBRx63tHsj8jUBodAeFatdaMrzAVqZS");
+  const outputTokenAccount = new anchor.web3.PublicKey("BRNRLhAmNX1BybMzGN9AcQjDRCHomU8UMCX5XP64iqDR");
 
   const poolInputVault = new anchor.web3.PublicKey("sohUc9fNVXwRhpoA1m4TYTmkn3hGwBB53Yw6kRL62h3");
   const poolOutputVault = new anchor.web3.PublicKey("H2xBLMD5DZ8Sgk1xfNv6MuHVA1Nvur8UY5EZ3TZt278V");
@@ -64,9 +64,9 @@ describe("raydium-swap", () => {
     };
 
     const remainingAccounts = [
-      new anchor.web3.PublicKey("5NkHDTm4EhHeDeAs8UqLRg8AC7TciT9PK3XBeyCHJVK7"),
-      new anchor.web3.PublicKey("9VQTRfHsf8dPcBijRSZPvDfGmzcc5xk4pDHEcGZKVvsT"),
-      new anchor.web3.PublicKey("AUQqfQe58Ybt9aiEgmEUJ2HxCjdqhryXAbGrXAx9HxCR")
+      new anchor.web3.PublicKey("EqsToU5h55zkrT4APCGku8nfVbNQMXHUeRnDEqtETELz"),
+      new anchor.web3.PublicKey("FRemXN1aJ1H1ApRMVhMKKmx83KFJrV2sUbVnxR3Q8fqR"),
+      new anchor.web3.PublicKey("2Mjgy6E2peVE5VF6bZDTWsWAeZtsymh8636okLqUxVYp")
     ];
 
     await program.methods
