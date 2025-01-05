@@ -277,7 +277,7 @@ pub mod raydium_swap {
             index += 1;
         }
 
-        for _ in 0..=swap_len {
+        for _ in 0..(2 * swap_len) {
             token_vaults.push(&remaining_accounts[index]);
             index += 1;
         }
@@ -292,19 +292,39 @@ pub mod raydium_swap {
             index += 1;
         }
 
+        for (loop_index, token_account_info) in token_accounts.iter().enumerate() {
+            if token_account_info.owner == &anchor_lang::solana_program::system_program::ID {
+                let associated_token_account_instruction = anchor_spl::associated_token::Create {
+                    payer: ctx.accounts.payer.to_account_info(),
+                    associated_token: (*token_account_info).clone(),
+                    authority: ctx.accounts.payer.to_account_info(),
+                    mint: token_mints[loop_index].to_account_info(),
+                    system_program: ctx.accounts.system_program.to_account_info(),
+                    token_program: ctx.accounts.token_program.to_account_info(),
+                };
+
+                anchor_spl::associated_token::create(CpiContext::new_with_signer(
+                    ctx.accounts.associated_token_program.to_account_info(),
+                    associated_token_account_instruction,
+                    &[],
+                ))?;
+            }
+        }
+
         let mut amount_in = params.amount;
         let amount_out_min = params.other_amount_threshold;
 
         let mut swap_index = 0;
+
         for _ in 0..swap_len {
             let accounts = vec![
-                AccountMeta::new_readonly(ctx.accounts.payer.key(), true),
+                AccountMeta::new(ctx.accounts.payer.key(), true),
                 AccountMeta::new_readonly(amm_configs[swap_index].key(), false),
                 AccountMeta::new(pool_states[swap_index].key(), false),
                 AccountMeta::new(token_accounts[swap_index].key(), false),
                 AccountMeta::new(token_accounts[swap_index + 1].key(), false),
-                AccountMeta::new(token_vaults[swap_index].key(), false),
-                AccountMeta::new(token_vaults[swap_index + 1].key(), false),
+                AccountMeta::new(token_vaults[2 * swap_index].key(), false),
+                AccountMeta::new(token_vaults[2 * swap_index + 1].key(), false),
                 AccountMeta::new(observation_states[swap_index].key(), false),
                 AccountMeta::new_readonly(ctx.accounts.token_program.key(), false),
                 AccountMeta::new_readonly(ctx.accounts.token_program_2022.key(), false),
@@ -333,15 +353,15 @@ pub mod raydium_swap {
             let mut accounts_with_remaining = accounts;
 
             accounts_with_remaining.push(AccountMeta::new(
-                ctx.remaining_accounts[3 * swap_index].key(),
+                other_accounts[3 * swap_index].key(),
                 false,
             ));
             accounts_with_remaining.push(AccountMeta::new(
-                ctx.remaining_accounts[3 * swap_index + 1].key(),
+                other_accounts[3 * swap_index + 1].key(),
                 false,
             ));
             accounts_with_remaining.push(AccountMeta::new(
-                ctx.remaining_accounts[3 * swap_index + 2].key(),
+                other_accounts[3 * swap_index + 2].key(),
                 false,
             ));
 
@@ -357,8 +377,8 @@ pub mod raydium_swap {
                 pool_states[swap_index].to_account_info(),
                 token_accounts[swap_index].to_account_info(),
                 token_accounts[swap_index + 1].to_account_info(),
-                token_vaults[swap_index].to_account_info(),
-                token_vaults[swap_index + 1].to_account_info(),
+                token_vaults[2 * swap_index].to_account_info(),
+                token_vaults[2 * swap_index + 1].to_account_info(),
                 observation_states[swap_index].to_account_info(),
                 ctx.accounts.token_program.to_account_info(),
                 ctx.accounts.token_program_2022.to_account_info(),
@@ -367,9 +387,9 @@ pub mod raydium_swap {
                 token_mints[swap_index + 1].to_account_info(),
             ];
 
-            account_infos.push(ctx.remaining_accounts[3 * swap_index].to_account_info());
-            account_infos.push(ctx.remaining_accounts[3 * swap_index + 1].to_account_info());
-            account_infos.push(ctx.remaining_accounts[3 * swap_index + 2].to_account_info());
+            account_infos.push(other_accounts[3 * swap_index].to_account_info());
+            account_infos.push(other_accounts[3 * swap_index + 1].to_account_info());
+            account_infos.push(other_accounts[3 * swap_index + 2].to_account_info());
 
             let balance_before = Account::<TokenAccount>::try_from(&token_accounts[swap_index + 1])
                 .map_err(|_| ErrorCode::InvalidTokenAccount)?
