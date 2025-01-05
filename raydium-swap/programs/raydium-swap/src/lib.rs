@@ -1,7 +1,7 @@
 use anchor_lang::prelude::*;
 use anchor_spl::associated_token::AssociatedToken;
-use anchor_spl::token::Token;
-use anchor_spl::token_interface::{Mint, Token2022, TokenAccount};
+use anchor_spl::token::{Token, TokenAccount};
+use anchor_spl::token_interface::Token2022;
 
 declare_id!("6WnLw2a5dNsoV7ZFAf2VrWrc2GBNwpYEhtRySSwTZdRL");
 
@@ -188,16 +188,23 @@ pub struct ObservationState {
 
 #[derive(Debug, Clone, AnchorSerialize, AnchorDeserialize)]
 pub struct SwapParams {
+    pub swap_len: u64,
     pub amount: u64,
     pub other_amount_threshold: u64,
-    pub sqrt_price_limit_x64: u128,
+}
+
+#[derive(Debug, Clone, AnchorSerialize, AnchorDeserialize)]
+pub struct SwapArgs {
+    pub amount: u64,
+    pub other_amount_threshold: u64,
+    pub sqrt_price_limit_x64: u64,
     pub is_base_input: bool,
 }
 
 #[event]
 pub struct SwapEvent {
     pub amount_in: u64,
-    pub amount_out_min: u64,
+    pub amount_out: u64,
 }
 
 #[derive(Accounts)]
@@ -208,51 +215,12 @@ pub struct Swap<'info> {
     #[account(mut)]
     pub payer: Signer<'info>,
 
-    /// CHECK: TODO
-    pub amm_config: UncheckedAccount<'info>,
-
-    /// CHECK: TODO
-    #[account(mut)]
-    pub pool_state: UncheckedAccount<'info>,
-
-    #[account(
-        init_if_needed,
-        payer = payer,
-        associated_token::mint = input_vault_mint,
-        associated_token::authority = payer,
-        associated_token::token_program = token_program
-    )]
-    pub input_token_account: Box<InterfaceAccount<'info, TokenAccount>>,
-
-    #[account(
-        init_if_needed,
-        payer = payer,
-        associated_token::mint = output_vault_mint,
-        associated_token::authority = payer,
-        associated_token::token_program = token_program
-    )]
-    pub output_token_account: Box<InterfaceAccount<'info, TokenAccount>>,
-
-    #[account(mut)]
-    pub input_vault: Box<InterfaceAccount<'info, TokenAccount>>,
-
-    #[account(mut)]
-    pub output_vault: Box<InterfaceAccount<'info, TokenAccount>>,
-
-    /// CHECK: TODO
-    #[account(mut)]
-    pub observation_state: UncheckedAccount<'info>,
-
     pub token_program: Program<'info, Token>,
 
     pub token_program_2022: Program<'info, Token2022>,
 
     /// CHECK: TODO
     pub memo_program: UncheckedAccount<'info>,
-
-    pub input_vault_mint: Box<InterfaceAccount<'info, Mint>>,
-
-    pub output_vault_mint: Box<InterfaceAccount<'info, Mint>>,
 
     pub system_program: Program<'info, System>,
 
@@ -275,82 +243,169 @@ pub mod raydium_swap {
         ctx: Context<'a, 'b, 'c, 'info, Swap<'info>>,
         params: SwapParams,
     ) -> Result<()> {
+        let swap_len = params.swap_len;
 
-        let accounts = vec![
-            AccountMeta::new_readonly(ctx.accounts.payer.key(), true),
-            AccountMeta::new_readonly(ctx.accounts.amm_config.key(), false),
-            AccountMeta::new(ctx.accounts.pool_state.key(), false),
-            AccountMeta::new(ctx.accounts.input_token_account.key(), false),
-            AccountMeta::new(ctx.accounts.output_token_account.key(), false),
-            AccountMeta::new(ctx.accounts.input_vault.key(), false),
-            AccountMeta::new(ctx.accounts.output_vault.key(), false),
-            AccountMeta::new(ctx.accounts.observation_state.key(), false),
-            AccountMeta::new_readonly(ctx.accounts.token_program.key(), false),
-            AccountMeta::new_readonly(ctx.accounts.token_program_2022.key(), false),
-            AccountMeta::new_readonly(ctx.accounts.memo_program.key(), false),
-            AccountMeta::new_readonly(ctx.accounts.input_vault_mint.key(), false),
-            AccountMeta::new_readonly(ctx.accounts.output_vault_mint.key(), false),
-        ];
+        let remaining_accounts = &ctx.remaining_accounts;
 
-        let raydium_program = ctx.accounts.raydium_program.key();
+        let mut amm_configs = Vec::new();
+        let mut pool_states = Vec::new();
+        let mut observation_states = Vec::new();
+        let mut token_accounts = Vec::new();
+        let mut token_vaults = Vec::new();
+        let mut token_mints = Vec::new();
+        let mut other_accounts = Vec::new();
 
-        let swap_data = SwapParams {
-            amount: params.amount,
-            other_amount_threshold: params.other_amount_threshold,
-            sqrt_price_limit_x64: params.sqrt_price_limit_x64,
-            is_base_input: params.is_base_input,
-        };
+        let mut index = 0;
 
-        let discriminator =
-            anchor_lang::solana_program::hash::hash("global:swap_v2".as_bytes()).to_bytes();
+        for _ in 0..swap_len {
+            amm_configs.push(&remaining_accounts[index]);
+            index += 1;
+        }
 
-        let mut instruction_data = Vec::new();
-        instruction_data.extend_from_slice(&discriminator[..8]);
+        for _ in 0..swap_len {
+            pool_states.push(&remaining_accounts[index]);
+            index += 1;
+        }
 
-        swap_data.serialize(&mut instruction_data)?;
+        for _ in 0..swap_len {
+            observation_states.push(&remaining_accounts[index]);
+            index += 1;
+        }
 
-        let mut accounts_with_remaining = accounts;
-        accounts_with_remaining.extend(
-            ctx.remaining_accounts
-                .iter()
-                .map(|acc| AccountMeta::new(acc.key(), false)),
+        for _ in 0..=swap_len {
+            token_accounts.push(&remaining_accounts[index]);
+            index += 1;
+        }
+
+        for _ in 0..=swap_len {
+            token_vaults.push(&remaining_accounts[index]);
+            index += 1;
+        }
+
+        for _ in 0..=swap_len {
+            token_mints.push(&remaining_accounts[index]);
+            index += 1;
+        }
+
+        for _ in 0..(3 * swap_len) {
+            other_accounts.push(&remaining_accounts[index]);
+            index += 1;
+        }
+
+        let mut amount_in = params.amount;
+        let amount_out_min = params.other_amount_threshold;
+
+        let mut swap_index = 0;
+        for _ in 0..swap_len {
+            let accounts = vec![
+                AccountMeta::new_readonly(ctx.accounts.payer.key(), true),
+                AccountMeta::new_readonly(amm_configs[swap_index].key(), false),
+                AccountMeta::new(pool_states[swap_index].key(), false),
+                AccountMeta::new(token_accounts[swap_index].key(), false),
+                AccountMeta::new(token_accounts[swap_index + 1].key(), false),
+                AccountMeta::new(token_vaults[swap_index].key(), false),
+                AccountMeta::new(token_vaults[swap_index + 1].key(), false),
+                AccountMeta::new(observation_states[swap_index].key(), false),
+                AccountMeta::new_readonly(ctx.accounts.token_program.key(), false),
+                AccountMeta::new_readonly(ctx.accounts.token_program_2022.key(), false),
+                AccountMeta::new_readonly(ctx.accounts.memo_program.key(), false),
+                AccountMeta::new_readonly(token_mints[swap_index].key(), false),
+                AccountMeta::new_readonly(token_mints[swap_index + 1].key(), false),
+            ];
+
+            let raydium_program = ctx.accounts.raydium_program.key();
+
+            let swap_data = SwapArgs {
+                amount: amount_in,
+                other_amount_threshold: 0,
+                sqrt_price_limit_x64: 0,
+                is_base_input: true,
+            };
+
+            let discriminator =
+                anchor_lang::solana_program::hash::hash("global:swap_v2".as_bytes()).to_bytes();
+
+            let mut instruction_data = Vec::new();
+            instruction_data.extend_from_slice(&discriminator[..8]);
+
+            swap_data.serialize(&mut instruction_data)?;
+
+            let mut accounts_with_remaining = accounts;
+
+            accounts_with_remaining.push(AccountMeta::new(
+                ctx.remaining_accounts[3 * swap_index].key(),
+                false,
+            ));
+            accounts_with_remaining.push(AccountMeta::new(
+                ctx.remaining_accounts[3 * swap_index + 1].key(),
+                false,
+            ));
+            accounts_with_remaining.push(AccountMeta::new(
+                ctx.remaining_accounts[3 * swap_index + 2].key(),
+                false,
+            ));
+
+            let swap_ix = anchor_lang::solana_program::instruction::Instruction {
+                program_id: raydium_program,
+                accounts: accounts_with_remaining,
+                data: instruction_data.to_vec(),
+            };
+
+            let mut account_infos = vec![
+                ctx.accounts.payer.to_account_info(),
+                amm_configs[swap_index].to_account_info(),
+                pool_states[swap_index].to_account_info(),
+                token_accounts[swap_index].to_account_info(),
+                token_accounts[swap_index + 1].to_account_info(),
+                token_vaults[swap_index].to_account_info(),
+                token_vaults[swap_index + 1].to_account_info(),
+                observation_states[swap_index].to_account_info(),
+                ctx.accounts.token_program.to_account_info(),
+                ctx.accounts.token_program_2022.to_account_info(),
+                ctx.accounts.memo_program.to_account_info(),
+                token_mints[swap_index].to_account_info(),
+                token_mints[swap_index + 1].to_account_info(),
+            ];
+
+            account_infos.push(ctx.remaining_accounts[3 * swap_index].to_account_info());
+            account_infos.push(ctx.remaining_accounts[3 * swap_index + 1].to_account_info());
+            account_infos.push(ctx.remaining_accounts[3 * swap_index + 2].to_account_info());
+
+            let balance_before = Account::<TokenAccount>::try_from(&token_accounts[swap_index + 1])
+                .map_err(|_| ErrorCode::InvalidTokenAccount)?
+                .amount;
+
+            anchor_lang::solana_program::program::invoke(&swap_ix, &account_infos)?;
+
+            let balance_after = Account::<TokenAccount>::try_from(&token_accounts[swap_index + 1])
+                .map_err(|_| ErrorCode::InvalidTokenAccount)?
+                .amount;
+
+            amount_in = balance_after - balance_before;
+
+            swap_index += 1;
+        }
+
+        require_gte!(
+            amount_in,
+            amount_out_min,
+            ErrorCode::TooLittleOutputReceived
         );
-
-        let swap_ix = anchor_lang::solana_program::instruction::Instruction {
-            program_id: raydium_program,
-            accounts: accounts_with_remaining,
-            data: instruction_data.to_vec(),
-        };
-
-        let mut account_infos = vec![
-            ctx.accounts.payer.to_account_info(),
-            ctx.accounts.amm_config.to_account_info(),
-            ctx.accounts.pool_state.to_account_info(),
-            ctx.accounts.input_token_account.to_account_info(),
-            ctx.accounts.output_token_account.to_account_info(),
-            ctx.accounts.input_vault.to_account_info(),
-            ctx.accounts.output_vault.to_account_info(),
-            ctx.accounts.observation_state.to_account_info(),
-            ctx.accounts.token_program.to_account_info(),
-            ctx.accounts.token_program_2022.to_account_info(),
-            ctx.accounts.memo_program.to_account_info(),
-            ctx.accounts.input_vault_mint.to_account_info(),
-            ctx.accounts.output_vault_mint.to_account_info(),
-        ];
-
-        account_infos.extend(
-            ctx.remaining_accounts
-                .iter()
-                .map(|acc| acc.to_account_info()),
-        );
-
-        anchor_lang::solana_program::program::invoke(&swap_ix, &account_infos)?;
 
         emit!(SwapEvent {
             amount_in: params.amount,
-            amount_out_min: params.other_amount_threshold,
+            amount_out: amount_in
         });
 
         Ok(())
     }
+}
+
+#[error_code]
+pub enum ErrorCode {
+    #[msg("Too little received")]
+    TooLittleOutputReceived,
+
+    #[msg("Invalid token account")]
+    InvalidTokenAccount,
 }
