@@ -191,6 +191,8 @@ pub struct SwapParams {
     pub swap_len: u64,
     pub amount: u64,
     pub other_amount_threshold: u64,
+    pub isBaseTokenSOL: bool,
+    pub isQuoteTokenSOL: bool,
 }
 
 #[derive(Debug, Clone, AnchorSerialize, AnchorDeserialize)]
