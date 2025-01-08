@@ -5,7 +5,7 @@ import { ASSOCIATED_TOKEN_PROGRAM_ID, } from "@solana/spl-token";
 import { SYSTEM_PROGRAM_ID } from "@coral-xyz/anchor/dist/cjs/native/system";
 
 describe("raydium-swap", () => {
-  const ammConfig1 = new anchor.web3.PublicKey("CQYbhr6amxUER4p5SC44C63R4qw4NFc9Z4Db9vF4tZwG")
+  const ammConfig1 = new anchor.web3.PublicKey("CQYbhr6amxUER4p5SC44C63R4qw4NFc9Z4Db9vF4tZwG");
   const ammConfig2 = new anchor.web3.PublicKey("CQYbhr6amxUER4p5SC44C63R4qw4NFc9Z4Db9vF4tZwG");
 
   const poolState1 = new anchor.web3.PublicKey("HRn16fqH3gR8xXgxgRxHY4M2unraFYTapgz8JLJRAvck");
