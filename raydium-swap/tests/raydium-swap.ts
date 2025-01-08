@@ -87,17 +87,17 @@ describe("raydium-swap", () => {
       { pubkey: observationState1, isSigner: false, isWritable: true },
       { pubkey: observationState2, isSigner: false, isWritable: true },
 
-      { pubkey: tokenAccount2, isSigner: false, isWritable: true },
       { pubkey: tokenAccount1, isSigner: false, isWritable: true },
+      { pubkey: tokenAccount2, isSigner: false, isWritable: true },
       { pubkey: tokenAccount3, isSigner: false, isWritable: true },
 
-      { pubkey: tokenVault2, isSigner: false, isWritable: true },
       { pubkey: tokenVault1, isSigner: false, isWritable: true },
+      { pubkey: tokenVault2, isSigner: false, isWritable: true },
       { pubkey: tokenVault3, isSigner: false, isWritable: true },
       { pubkey: tokenVault4, isSigner: false, isWritable: true },
 
-      { pubkey: tokenMint2, isSigner: false, isWritable: false },
       { pubkey: tokenMint1, isSigner: false, isWritable: false },
+      { pubkey: tokenMint2, isSigner: false, isWritable: false },
       { pubkey: tokenMint3, isSigner: false, isWritable: false },
 
       { pubkey: otherAccount1, isSigner: false, isWritable: true },
