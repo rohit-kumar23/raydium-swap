@@ -2,6 +2,9 @@ use anchor_lang::prelude::*;
 use anchor_spl::associated_token::AssociatedToken;
 use anchor_spl::token::{Token, TokenAccount};
 use anchor_spl::token_interface::Token2022;
+use anchor_spl::token::{sync_native, SyncNative};
+use anchor_spl::token::{close_account, CloseAccount};
+
 
 declare_id!("6WnLw2a5dNsoV7ZFAf2VrWrc2GBNwpYEhtRySSwTZdRL");
 
@@ -314,6 +317,52 @@ pub mod raydium_swap {
         }
 
         let mut amount_in = params.amount;
+        if params.isBaseTokenSOL {
+            let wsol_account = &token_accounts[swap_len as usize];
+            let wsol_account_info = wsol_account.to_account_info();
+
+            // Check if the WSOL account exists and is initialized
+            let is_wsol_initialized = wsol_account_info.owner == &anchor_spl::token::ID;
+
+            if !is_wsol_initialized {
+                // Create ATA if it doesn't exist
+                let associated_token_account_instruction = anchor_spl::associated_token::Create {
+                    payer: ctx.accounts.payer.to_account_info(),
+                    associated_token: wsol_account_info.clone(),
+                    authority: ctx.accounts.payer.to_account_info(),
+                    mint: token_mints[0].to_account_info(),
+                    system_program: ctx.accounts.system_program.to_account_info(),
+                    token_program: ctx.accounts.token_program.to_account_info(),
+                };
+
+                anchor_spl::associated_token::create(CpiContext::new_with_signer(
+                    ctx.accounts.associated_token_program.to_account_info(),
+                    associated_token_account_instruction,
+                    &[],
+                ))?;
+            }
+
+            // Transfer SOL to WSOL account
+            anchor_lang::system_program::transfer(
+                CpiContext::new(
+                    ctx.accounts.system_program.to_account_info(),
+                    anchor_lang::system_program::Transfer {
+                        from: ctx.accounts.payer.to_account_info(),
+                        to: wsol_account_info.clone(),
+                    },
+                ),
+                amount_in,
+            )?;
+
+            // Sync WSOL account
+            sync_native(CpiContext::new(
+                ctx.accounts.token_program.to_account_info(),
+                SyncNative {
+                    account: wsol_account_info.to_account_info(),
+                },
+            ))?;
+        }
+
         let amount_out_min = params.other_amount_threshold;
 
         let mut swap_index = 0;
@@ -413,6 +462,27 @@ pub mod raydium_swap {
             amount_out_min,
             ErrorCode::TooLittleOutputReceived
         );
+
+        // Handle WSOL to SOL conversion if quote token is SOL
+        if params.isQuoteTokenSOL {
+            let wsol_account = &token_accounts[swap_len as usize];
+            let wsol_account_info = wsol_account.to_account_info();
+
+            if wsol_account_info.owner == &anchor_spl::token::ID {
+                // Only close WSOL account if it was created during this transaction
+                if !params.isBaseTokenSOL {
+                    // Don't close if it's the same account used for input
+                    close_account(CpiContext::new(
+                        ctx.accounts.token_program.to_account_info(),
+                        CloseAccount {
+                            account: wsol_account_info,
+                            destination: ctx.accounts.payer.to_account_info(),
+                            authority: ctx.accounts.payer.to_account_info(),
+                        },
+                    ))?;
+                }
+            }
+        }
 
         emit!(SwapEvent {
             amount_in: params.amount,
