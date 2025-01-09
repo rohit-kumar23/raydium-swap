@@ -72,42 +72,42 @@ describe("raydium-swap", () => {
     const program = anchor.workspace.RaydiumSwap as Program<RaydiumSwap>;
 
     const params = {
-      swapLen: new anchor.BN(2),
-      amount: new anchor.BN(10000000),
+      swapLen: new anchor.BN(1),
+      amount: new anchor.BN(100),
       otherAmountThreshold: new anchor.BN(500),
-      isBaseTokenSOL: true,
-      isQuoteTokenSOL: false,
+      isBaseTokenSol: false,
+      isQuoteTokenSol: false,
     };
 
     const remainingAccounts = [
       { pubkey: ammConfig1, isSigner: false, isWritable: false },
-      { pubkey: ammConfig2, isSigner: false, isWritable: false },
+      // { pubkey: ammConfig2, isSigner: false, isWritable: false },
 
       { pubkey: poolState1, isSigner: false, isWritable: true },
-      { pubkey: poolState2, isSigner: false, isWritable: true },
+      // { pubkey: poolState2, isSigner: false, isWritable: true },
 
       { pubkey: observationState1, isSigner: false, isWritable: true },
-      { pubkey: observationState2, isSigner: false, isWritable: true },
+      // { pubkey: observationState2, isSigner: false, isWritable: true },
 
       { pubkey: tokenAccount1, isSigner: false, isWritable: true },
       { pubkey: tokenAccount2, isSigner: false, isWritable: true },
-      { pubkey: tokenAccount3, isSigner: false, isWritable: true },
+      // { pubkey: tokenAccount3, isSigner: false, isWritable: true },
 
       { pubkey: tokenVault1, isSigner: false, isWritable: true },
       { pubkey: tokenVault2, isSigner: false, isWritable: true },
-      { pubkey: tokenVault3, isSigner: false, isWritable: true },
-      { pubkey: tokenVault4, isSigner: false, isWritable: true },
+      // { pubkey: tokenVault3, isSigner: false, isWritable: true },
+      // { pubkey: tokenVault4, isSigner: false, isWritable: true },
 
       { pubkey: tokenMint1, isSigner: false, isWritable: false },
       { pubkey: tokenMint2, isSigner: false, isWritable: false },
-      { pubkey: tokenMint3, isSigner: false, isWritable: false },
+      // { pubkey: tokenMint3, isSigner: false, isWritable: false },
 
       { pubkey: otherAccount1, isSigner: false, isWritable: true },
       { pubkey: otherAccount2, isSigner: false, isWritable: true },
       { pubkey: otherAccount3, isSigner: false, isWritable: true },
-      { pubkey: otherAccount4, isSigner: false, isWritable: true },
-      { pubkey: otherAccount5, isSigner: false, isWritable: true },
-      { pubkey: otherAccount6, isSigner: false, isWritable: true },
+      // { pubkey: otherAccount4, isSigner: false, isWritable: true },
+      // { pubkey: otherAccount5, isSigner: false, isWritable: true },
+      // { pubkey: otherAccount6, isSigner: false, isWritable: true },
     ];
 
 

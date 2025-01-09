@@ -1,5 +1,6 @@
 use anchor_lang::prelude::*;
 use anchor_spl::associated_token::AssociatedToken;
+use anchor_spl::token::{sync_native, SyncNative};
 use anchor_spl::token::{Token, TokenAccount};
 use anchor_spl::token_interface::Token2022;
 
@@ -10,8 +11,8 @@ pub struct SwapParams {
     pub swap_len: u64,
     pub amount: u64,
     pub other_amount_threshold: u64,
-    pub isBaseTokenSOL: bool,
-    pub isQuoteTokenSOL: bool,
+    pub is_base_token_sol: bool,
+    pub is_quote_token_sol: bool,
 }
 
 #[derive(Debug, Clone, AnchorSerialize, AnchorDeserialize)]
@@ -53,6 +54,8 @@ pub struct Swap<'info> {
 
 #[program]
 pub mod raydium_swap {
+    use std::str::FromStr;
+
     use super::*;
 
     pub fn ping(ctx: Context<Ping>) -> Result<()> {
@@ -134,6 +137,38 @@ pub mod raydium_swap {
 
         let mut amount_in = params.amount;
         let amount_out_min = params.other_amount_threshold;
+
+        if params.is_base_token_sol {
+            let wsol_account = &token_accounts[0];
+            let wsol_account_info = wsol_account.to_account_info();
+
+            let wsol_mint = &token_mints[0];
+
+            if wsol_mint.to_account_info().key
+                != &Pubkey::from_str("So11111111111111111111111111111111111111112").unwrap()
+            {
+                return Err(ErrorCode::InvalidBaseTokenAccount.into());
+            }
+
+            // SOL to WSOL
+            anchor_lang::system_program::transfer(
+                CpiContext::new(
+                    ctx.accounts.system_program.to_account_info(),
+                    anchor_lang::system_program::Transfer {
+                        from: ctx.accounts.payer.to_account_info(),
+                        to: wsol_account_info.clone(),
+                    },
+                ),
+                amount_in,
+            )?;
+
+            sync_native(CpiContext::new(
+                ctx.accounts.token_program.to_account_info(),
+                SyncNative {
+                    account: wsol_account_info.to_account_info(),
+                },
+            ))?;
+        }
 
         let mut swap_index = 0;
 
@@ -233,6 +268,29 @@ pub mod raydium_swap {
             ErrorCode::TooLittleOutputReceived
         );
 
+        if params.is_quote_token_sol {
+            let wsol_account = &token_accounts[swap_len as usize];
+            let wsol_account_info = wsol_account.to_account_info();
+
+            let wsol_mint = &token_mints[swap_len as usize];
+
+            if wsol_mint.to_account_info().key
+                != &Pubkey::from_str("So11111111111111111111111111111111111111112").unwrap()
+            {
+                return Err(ErrorCode::InvalidQuoteTokenAccount.into());
+            }
+
+            // WSOL to SOL
+            anchor_spl::token::close_account(CpiContext::new(
+                ctx.accounts.token_program.to_account_info(),
+                anchor_spl::token::CloseAccount {
+                    account: wsol_account_info,
+                    destination: ctx.accounts.payer.to_account_info(),
+                    authority: ctx.accounts.payer.to_account_info(),
+                },
+            ))?;
+        }
+
         emit!(SwapEvent {
             amount_in: params.amount,
             amount_out: amount_in
@@ -249,4 +307,10 @@ pub enum ErrorCode {
 
     #[msg("Invalid token account")]
     InvalidTokenAccount,
+
+    #[msg("Invalid base token account")]
+    InvalidBaseTokenAccount,
+
+    #[msg("Invalid quote token account")]
+    InvalidQuoteTokenAccount,
 }
