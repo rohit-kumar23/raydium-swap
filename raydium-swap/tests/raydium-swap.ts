@@ -46,26 +46,11 @@ describe("raydium-swap", () => {
 
   before(async () => {
     payer = anchor.web3.Keypair.fromSecretKey(
-      Buffer.from(JSON.parse(require('fs').readFileSync('/home/rohit/.config/solana/id.json')))
+      Buffer.from(JSON.parse(require('fs').readFileSync('/Users/suryapratap/.config/solana/id.json')))
     );
     console.log("Using user with public key:", payer.publicKey.toString());
   });
 
-  it("tests the ping function", async () => {
-    anchor.setProvider(anchor.AnchorProvider.env());
-    const program = anchor.workspace.RaydiumSwap as Program<RaydiumSwap>;
-
-    // Call the ping method
-    await program.methods
-      .ping()
-      .accounts({
-        payer: payer.publicKey,
-      })
-      .signers([payer])
-      .rpc();
-
-    console.log("Ping executed successfully!");
-  });
 
   it("tests the swap function", async () => {
     anchor.setProvider(anchor.AnchorProvider.env());
