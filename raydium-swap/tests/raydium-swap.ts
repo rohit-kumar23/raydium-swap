@@ -28,6 +28,9 @@ describe("raydium-swap", () => {
   const tokenMint2 = new anchor.web3.PublicKey("So11111111111111111111111111111111111111112");
   const tokenMint3 = new anchor.web3.PublicKey("Gh9ZwEmdLJ8DscKNTkTqPbNwLNNBjuSzaG9Vp2KGtKJr");
 
+  // AmmV3: TickArrayBitmapExtension
+  // AmmV3: TickArrayState
+  // AmmV3: TickArrayState
   const otherAccount1 = new anchor.web3.PublicKey("5NkHDTm4EhHeDeAs8UqLRg8AC7TciT9PK3XBeyCHJVK7");
   const otherAccount2 = new anchor.web3.PublicKey("9VQTRfHsf8dPcBijRSZPvDfGmzcc5xk4pDHEcGZKVvsT");
   const otherAccount3 = new anchor.web3.PublicKey("AUQqfQe58Ybt9aiEgmEUJ2HxCjdqhryXAbGrXAx9HxCR");
@@ -46,11 +49,26 @@ describe("raydium-swap", () => {
 
   before(async () => {
     payer = anchor.web3.Keypair.fromSecretKey(
-      Buffer.from(JSON.parse(require('fs').readFileSync('/Users/suryapratap/.config/solana/id.json')))
+      Buffer.from(JSON.parse(require('fs').readFileSync('/home/rohit/.config/solana/id.json')))
     );
     console.log("Using user with public key:", payer.publicKey.toString());
   });
 
+  it("tests the ping function", async () => {
+    anchor.setProvider(anchor.AnchorProvider.env());
+    const program = anchor.workspace.RaydiumSwap as Program<RaydiumSwap>;
+
+    // Call the ping method
+    await program.methods
+      .ping()
+      .accounts({
+        payer: payer.publicKey,
+      })
+      .signers([payer])
+      .rpc();
+
+    console.log("Ping executed successfully!");
+  });
 
   it("tests the swap function", async () => {
     anchor.setProvider(anchor.AnchorProvider.env());
@@ -66,33 +84,33 @@ describe("raydium-swap", () => {
 
     const remainingAccounts = [
       { pubkey: ammConfig1, isSigner: false, isWritable: false },
-      // { pubkey: ammConfig2, isSigner: false, isWritable: false },
+      { pubkey: ammConfig2, isSigner: false, isWritable: false },
 
       { pubkey: poolState1, isSigner: false, isWritable: true },
-      // { pubkey: poolState2, isSigner: false, isWritable: true },
+      { pubkey: poolState2, isSigner: false, isWritable: true },
 
       { pubkey: observationState1, isSigner: false, isWritable: true },
-      // { pubkey: observationState2, isSigner: false, isWritable: true },
+      { pubkey: observationState2, isSigner: false, isWritable: true },
 
       { pubkey: tokenAccount1, isSigner: false, isWritable: true },
       { pubkey: tokenAccount2, isSigner: false, isWritable: true },
-      // { pubkey: tokenAccount3, isSigner: false, isWritable: true },
+      { pubkey: tokenAccount3, isSigner: false, isWritable: true },
 
       { pubkey: tokenVault1, isSigner: false, isWritable: true },
       { pubkey: tokenVault2, isSigner: false, isWritable: true },
-      // { pubkey: tokenVault3, isSigner: false, isWritable: true },
-      // { pubkey: tokenVault4, isSigner: false, isWritable: true },
+      { pubkey: tokenVault3, isSigner: false, isWritable: true },
+      { pubkey: tokenVault4, isSigner: false, isWritable: true },
 
       { pubkey: tokenMint1, isSigner: false, isWritable: false },
       { pubkey: tokenMint2, isSigner: false, isWritable: false },
-      // { pubkey: tokenMint3, isSigner: false, isWritable: false },
+      { pubkey: tokenMint3, isSigner: false, isWritable: false },
 
       { pubkey: otherAccount1, isSigner: false, isWritable: true },
       { pubkey: otherAccount2, isSigner: false, isWritable: true },
       { pubkey: otherAccount3, isSigner: false, isWritable: true },
-      // { pubkey: otherAccount4, isSigner: false, isWritable: true },
-      // { pubkey: otherAccount5, isSigner: false, isWritable: true },
-      // { pubkey: otherAccount6, isSigner: false, isWritable: true },
+      { pubkey: otherAccount4, isSigner: false, isWritable: true },
+      { pubkey: otherAccount5, isSigner: false, isWritable: true },
+      { pubkey: otherAccount6, isSigner: false, isWritable: true },
     ];
 
 

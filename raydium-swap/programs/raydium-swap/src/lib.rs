@@ -73,6 +73,7 @@ pub mod raydium_swap {
         let mut token_accounts = Vec::new();
         let mut token_vaults = Vec::new();
         let mut token_mints = Vec::new();
+        let mut token_programs = Vec::new();
         let mut other_accounts = Vec::new();
 
         let mut index = 0;
@@ -107,6 +108,11 @@ pub mod raydium_swap {
             index += 1;
         }
 
+        for _ in 0..=swap_len {
+            token_programs.push(&remaining_accounts[index]);
+            index += 1;
+        }
+
         for _ in 0..(3 * swap_len) {
             other_accounts.push(&remaining_accounts[index]);
             index += 1;
@@ -120,7 +126,7 @@ pub mod raydium_swap {
                     authority: ctx.accounts.payer.to_account_info(),
                     mint: token_mints[loop_index].to_account_info(),
                     system_program: ctx.accounts.system_program.to_account_info(),
-                    token_program: ctx.accounts.token_program.to_account_info(),
+                    token_program: token_programs[loop_index].to_account_info(),
                 };
 
                 anchor_spl::associated_token::create(CpiContext::new_with_signer(
@@ -317,6 +323,7 @@ pub mod raydium_swap {
             let mut token_accounts = Vec::new();
             let mut token_vaults = Vec::new();
             let mut token_mints = Vec::new();
+            let mut token_programs = Vec::new();
             let mut other_accounts = Vec::new();
 
             for _ in 0..swap_len {
@@ -349,6 +356,11 @@ pub mod raydium_swap {
                 account_idx += 1;
             }
 
+            for _ in 0..=swap_len {
+                token_programs.push(&remaining_accounts[account_idx]);
+                account_idx += 1;
+            }
+
             for _ in 0..(3 * swap_len) {
                 other_accounts.push(&remaining_accounts[account_idx]);
                 account_idx += 1;
@@ -363,7 +375,7 @@ pub mod raydium_swap {
                             authority: ctx.accounts.payer.to_account_info(),
                             mint: token_mints[loop_index].to_account_info(),
                             system_program: ctx.accounts.system_program.to_account_info(),
-                            token_program: ctx.accounts.token_program.to_account_info(),
+                            token_program: token_programs[loop_index].to_account_info(),
                         };
 
                     anchor_spl::associated_token::create(CpiContext::new_with_signer(
