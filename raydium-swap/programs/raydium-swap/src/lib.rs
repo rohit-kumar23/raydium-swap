@@ -5,7 +5,7 @@ use anchor_spl::token::{Token, TokenAccount};
 use anchor_spl::token_interface::Token2022;
 use spl_token_2022::{extension::StateWithExtensions, state::Account as TokenAccount2022};
 
-declare_id!("3e6Ybj58Y6Ux6ihXdmqsn5Wdv1Yc3Fh4JCdRTqNZBteA");
+declare_id!("9FCuXEdyBAUP2zMzptnu1Afcmy9oqjvkQVN3iN2hpZ53");
 
 #[derive(Debug, Clone, AnchorSerialize, AnchorDeserialize)]
 pub struct RaydiumSwapArgs {
@@ -257,19 +257,26 @@ pub mod raydium_swap {
             //     .map_err(|_| ErrorCode::InvalidTokenAccount)?
             //     .amount;
 
-            let balance_before = if token_program_pubkey.key()
-                == ctx.accounts.token_program_2022.key()
-            {
-                let account_data = token_account_pubkey.try_borrow_data()?;
-                let token_account = StateWithExtensions::<TokenAccount2022>::unpack(&account_data)
-                    .map_err(|_| ErrorCode::InvalidTokenAccount)?;
+            let balance_before =
+                if token_program_pubkey.key() == ctx.accounts.token_program_2022.key() {
+                    let balance_before_tmp = {
+                        let account_data = token_account_pubkey.try_borrow_data()?;
+                        let token_account =
+                            StateWithExtensions::<TokenAccount2022>::unpack(&account_data)
+                                .map_err(|_| ErrorCode::InvalidTokenAccount)?;
 
-                token_account.base.amount
-            } else {
-                Account::<TokenAccount>::try_from(&token_accounts[swap_index + 1])
-                    .map_err(|_| ErrorCode::InvalidTokenAccount)?
-                    .amount
-            };
+                        token_account.base.amount
+                    };
+                    balance_before_tmp
+                } else {
+                    let balance_before_tmp = {
+                        let account = Account::<TokenAccount>::try_from(token_account_pubkey)
+                            .map_err(|_| ErrorCode::InvalidTokenAccount)?;
+
+                        account.amount
+                    };
+                    balance_before_tmp
+                };
 
             anchor_lang::solana_program::program::invoke(&swap_ix, &account_infos)?;
 
@@ -277,19 +284,26 @@ pub mod raydium_swap {
             //     .map_err(|_| ErrorCode::InvalidTokenAccount)?
             //     .amount;
 
-            let balance_after = if token_program_pubkey.key()
-                == ctx.accounts.token_program_2022.key()
-            {
-                let account_data = token_account_pubkey.try_borrow_data()?;
-                let token_account = StateWithExtensions::<TokenAccount2022>::unpack(&account_data)
-                    .map_err(|_| ErrorCode::InvalidTokenAccount)?;
+            let balance_after =
+                if token_program_pubkey.key() == ctx.accounts.token_program_2022.key() {
+                    let balance_after_tmp = {
+                        let account_data = token_account_pubkey.try_borrow_data()?;
+                        let token_account =
+                            StateWithExtensions::<TokenAccount2022>::unpack(&account_data)
+                                .map_err(|_| ErrorCode::InvalidTokenAccount)?;
 
-                token_account.base.amount
-            } else {
-                Account::<TokenAccount>::try_from(&token_accounts[swap_index + 1])
-                    .map_err(|_| ErrorCode::InvalidTokenAccount)?
-                    .amount
-            };
+                        token_account.base.amount
+                    };
+                    balance_after_tmp
+                } else {
+                    let balance_after_tmp = {
+                        let account = Account::<TokenAccount>::try_from(token_account_pubkey)
+                            .map_err(|_| ErrorCode::InvalidTokenAccount)?;
+
+                        account.amount
+                    };
+                    balance_after_tmp
+                };
 
             amount_in = balance_after - balance_before;
 

@@ -5,7 +5,7 @@ resolution = true
 skip-lint = false
 
 [programs.devnet]
-raydium_swap = "3e6Ybj58Y6Ux6ihXdmqsn5Wdv1Yc3Fh4JCdRTqNZBteA"
+raydium_swap = "9FCuXEdyBAUP2zMzptnu1Afcmy9oqjvkQVN3iN2hpZ53"
 
 [registry]
 url = "https://api.apr.dev"

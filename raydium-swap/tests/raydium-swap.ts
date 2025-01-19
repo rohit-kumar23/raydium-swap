@@ -58,7 +58,7 @@ describe("raydium-swap", () => {
 
     const params = {
       swapLen: new anchor.BN(2),
-      amount: new anchor.BN(80000000000),
+      amount: new anchor.BN(1000000000),
       otherAmountThreshold: new anchor.BN(0),
       isBaseTokenSol: false,
       isQuoteTokenSol: false,
