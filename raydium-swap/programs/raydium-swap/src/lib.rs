@@ -211,18 +211,18 @@ pub mod raydium_swap {
 
             let mut accounts_with_remaining = accounts;
 
-            accounts_with_remaining.push(AccountMeta::new(
-                other_accounts[3 * swap_index].key(),
-                false,
-            ));
-            accounts_with_remaining.push(AccountMeta::new(
-                other_accounts[3 * swap_index + 1].key(),
-                false,
-            ));
-            accounts_with_remaining.push(AccountMeta::new(
-                other_accounts[3 * swap_index + 2].key(),
-                false,
-            ));
+            let first_account = other_accounts[3 * swap_index];
+            let second_account = other_accounts[3 * swap_index + 1];
+            let third_account = other_accounts[3 * swap_index + 2];
+
+            accounts_with_remaining.push(AccountMeta::new(first_account.key(), false));
+
+            if second_account.key() != third_account.key() {
+                accounts_with_remaining.push(AccountMeta::new(second_account.key(), false));
+                accounts_with_remaining.push(AccountMeta::new(third_account.key(), false));
+            } else {
+                accounts_with_remaining.push(AccountMeta::new(second_account.key(), false));
+            }
 
             let swap_ix = anchor_lang::solana_program::instruction::Instruction {
                 program_id: raydium_program,
@@ -246,9 +246,14 @@ pub mod raydium_swap {
                 token_mints[swap_index + 1].to_account_info(),
             ];
 
-            account_infos.push(other_accounts[3 * swap_index].to_account_info());
-            account_infos.push(other_accounts[3 * swap_index + 1].to_account_info());
-            account_infos.push(other_accounts[3 * swap_index + 2].to_account_info());
+            account_infos.push(first_account.to_account_info());
+
+            if second_account.key() != third_account.key() {
+                account_infos.push(second_account.to_account_info());
+                account_infos.push(third_account.to_account_info());
+            } else {
+                account_infos.push(second_account.to_account_info());
+            }
 
             let token_account_pubkey = &token_accounts[swap_index + 1];
             let token_program_pubkey = &token_programs[swap_index + 1];
