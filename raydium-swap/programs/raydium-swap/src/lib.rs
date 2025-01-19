@@ -3,8 +3,9 @@ use anchor_spl::associated_token::AssociatedToken;
 use anchor_spl::token::{sync_native, SyncNative};
 use anchor_spl::token::{Token, TokenAccount};
 use anchor_spl::token_interface::Token2022;
+use spl_token_2022::{extension::StateWithExtensions, state::Account as TokenAccount2022};
 
-declare_id!("6WnLw2a5dNsoV7ZFAf2VrWrc2GBNwpYEhtRySSwTZdRL");
+declare_id!("FZSd3d2QmSfyD5qr8UXY9x8poC2V3mKf8DVyf2BCDLzq");
 
 #[derive(Debug, Clone, AnchorSerialize, AnchorDeserialize)]
 pub struct RaydiumSwapArgs {
@@ -249,15 +250,46 @@ pub mod raydium_swap {
             account_infos.push(other_accounts[3 * swap_index + 1].to_account_info());
             account_infos.push(other_accounts[3 * swap_index + 2].to_account_info());
 
-            let balance_before = Account::<TokenAccount>::try_from(&token_accounts[swap_index + 1])
-                .map_err(|_| ErrorCode::InvalidTokenAccount)?
-                .amount;
+            let token_account_pubkey = &token_accounts[swap_index + 1];
+            let token_program_pubkey = &token_programs[swap_index + 1];
+
+            // let balance_before = Account::<TokenAccount>::try_from(&token_accounts[swap_index + 1])
+            //     .map_err(|_| ErrorCode::InvalidTokenAccount)?
+            //     .amount;
+
+            let balance_before = if token_program_pubkey.key()
+                == ctx.accounts.token_program_2022.key()
+            {
+                let account_data = token_account_pubkey.try_borrow_data()?;
+                let token_account = StateWithExtensions::<TokenAccount2022>::unpack(&account_data)
+                    .map_err(|_| ErrorCode::InvalidTokenAccount)?;
+
+                token_account.base.amount
+            } else {
+                Account::<TokenAccount>::try_from(&token_accounts[swap_index + 1])
+                    .map_err(|_| ErrorCode::InvalidTokenAccount)?
+                    .amount
+            };
 
             anchor_lang::solana_program::program::invoke(&swap_ix, &account_infos)?;
 
-            let balance_after = Account::<TokenAccount>::try_from(&token_accounts[swap_index + 1])
-                .map_err(|_| ErrorCode::InvalidTokenAccount)?
-                .amount;
+            // let balance_after = Account::<TokenAccount>::try_from(&token_accounts[swap_index + 1])
+            //     .map_err(|_| ErrorCode::InvalidTokenAccount)?
+            //     .amount;
+
+            let balance_after = if token_program_pubkey.key()
+                == ctx.accounts.token_program_2022.key()
+            {
+                let account_data = token_account_pubkey.try_borrow_data()?;
+                let token_account = StateWithExtensions::<TokenAccount2022>::unpack(&account_data)
+                    .map_err(|_| ErrorCode::InvalidTokenAccount)?;
+
+                token_account.base.amount
+            } else {
+                Account::<TokenAccount>::try_from(&token_accounts[swap_index + 1])
+                    .map_err(|_| ErrorCode::InvalidTokenAccount)?
+                    .amount
+            };
 
             amount_in = balance_after - balance_before;
 

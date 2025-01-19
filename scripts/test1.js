@@ -2,7 +2,7 @@ import { Connection, PublicKey } from "@solana/web3.js";
 import { getAssociatedTokenAddress } from "@solana/spl-token";
 
 const mint = new PublicKey("So11111111111111111111111111111111111111112");
-const pubKey = new PublicKey("2qhv3WvZkB4sLc6k31Vt1o2E9YnnKSAdEwodZAv4FJnX");
+const pubKey = new PublicKey("Zivon5h5wAjQS8NTnApXjs8mrq8WBP5EnpVn6h2mcFA");
 
 // Create a connection to the Solana Devnet
 const connection = new Connection("https://api.devnet.solana.com");

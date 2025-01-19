@@ -5,13 +5,13 @@ resolution = true
 skip-lint = false
 
 [programs.devnet]
-raydium_swap = "6WnLw2a5dNsoV7ZFAf2VrWrc2GBNwpYEhtRySSwTZdRL"
+raydium_swap = "FZSd3d2QmSfyD5qr8UXY9x8poC2V3mKf8DVyf2BCDLzq"
 
 [registry]
 url = "https://api.apr.dev"
 
 [provider]
-cluster = "Devnet"
+cluster = "devnet"
 wallet = "~/.config/solana/id.json"
 
 [scripts]
