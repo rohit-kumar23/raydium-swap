@@ -5,7 +5,7 @@ use anchor_spl::token::{Token, TokenAccount};
 use anchor_spl::token_interface::Token2022;
 use spl_token_2022::{extension::StateWithExtensions, state::Account as TokenAccount2022};
 
-declare_id!("FZSd3d2QmSfyD5qr8UXY9x8poC2V3mKf8DVyf2BCDLzq");
+declare_id!("3e6Ybj58Y6Ux6ihXdmqsn5Wdv1Yc3Fh4JCdRTqNZBteA");
 
 #[derive(Debug, Clone, AnchorSerialize, AnchorDeserialize)]
 pub struct RaydiumSwapArgs {
